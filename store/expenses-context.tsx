@@ -1,17 +1,17 @@
-import {createContext, DispatchWithoutAction, useReducer} from "react";
+import {createContext, useReducer} from "react";
 import {Expense, ExpensesDetail} from "../consts/models";
 import React from "react"
-import {Expenses} from "../consts/data";
-import {AppState, Action, IExpensesProvider} from "../store/models";
+import {Action, IExpensesProvider} from "../store/models";
 
 
 const EmptyState :Array<ExpensesDetail> = []
 
 export const ExpensesContext = createContext ({
     expenses: EmptyState,
-    addExpense: (data: Expense) => {},
+    addExpense: (data: ExpensesDetail) => {},
     deleteExpenses: (id: string) => {},
     updateExpenses: (id: string, data: Expense) => {},
+    setExpenses: (data: Array<ExpensesDetail>) => {},
 })
 
 
@@ -19,8 +19,7 @@ export const ExpensesContext = createContext ({
 const expensesReducer = (state: Array<ExpensesDetail>, action: Action): Array<ExpensesDetail> => {
     switch (action.type) {
         case "ADD":
-            const id: string = new Date().toString() + Math.random().toString()
-            return [{...action.payload.data, id: id},...state]
+            return [{...action.payload.data},...state]
         case "DELETE":
             return state.filter((expense) => expense.id !== action.payload.id)
         case "UPDATE":
@@ -30,13 +29,15 @@ const expensesReducer = (state: Array<ExpensesDetail>, action: Action): Array<Ex
             const newItems = [...state]
             newItems[itemIndex] = newItem
             return newItems
+        case "SET":
+            return action.payload
         default:
             return state
     }
 }
 const ExpensesProvider: React.FC<IExpensesProvider> = ({children}): React.JSX.Element => {
-    const [expensesState, dispatch] = useReducer(expensesReducer, Expenses);
-    const addExpense = (data: Expense) => {
+    const [expensesState, dispatch] = useReducer(expensesReducer, []);
+    const addExpense = (data: ExpensesDetail) => {
         dispatch({type: "ADD", payload: {data: data}})
     }
 
@@ -48,11 +49,16 @@ const ExpensesProvider: React.FC<IExpensesProvider> = ({children}): React.JSX.El
         dispatch({type: "DELETE", payload: {id: id}})
     }
 
+    const setExpenses = (data: Array<ExpensesDetail>) => {
+        dispatch({type: "SET", payload: data})
+    }
+
     const value = {
         expenses: expensesState,
         addExpense: addExpense,
         deleteExpenses: deleteExpense,
         updateExpenses: updateExpense,
+        setExpenses: setExpenses,
     }
 
     return <ExpensesContext.Provider value={value}>{children}</ExpensesContext.Provider>

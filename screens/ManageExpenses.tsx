@@ -1,4 +1,4 @@
-import React, {useContext, useLayoutEffect} from "react";
+import React, {useContext, useLayoutEffect, useState} from "react";
 import {View, Text, StyleSheet} from "react-native";
 import {NativeStackScreenProps} from "@react-navigation/native-stack";
 import IconButton from "../components/AddButton";
@@ -6,6 +6,8 @@ import {GlobalStyles} from "../consts/styles";
 import {ExpensesContext} from "../store/expenses-context";
 import ExpenseForm from "../components/ExpenseForm";
 import {Expense} from "../consts/models";
+import {deleteExpense, storeExpense, updateExpense} from "../api/http";
+import LoadingOverlay from "../components/LoadingOverlay";
 
 export type RootStackParamList = {
     ManageExpenses: { expenseId: string },
@@ -13,6 +15,7 @@ export type RootStackParamList = {
 };
 
 const ManageExpensesScreen = ({route, navigation}: NativeStackScreenProps<RootStackParamList, "ManageExpenses">): React.JSX.Element => {
+    const [isSubmitting, setIsSubmitting] = useState(false)
     const expensesCtx = useContext(ExpensesContext)
     const expenseId: string = route.params?.expenseId
     const isEditing: boolean = !!expenseId
@@ -25,15 +28,30 @@ const ManageExpensesScreen = ({route, navigation}: NativeStackScreenProps<RootSt
     const cancel = () => {
         navigation.goBack()
     }
-    const deleteHandler = () => {
+    const deleteHandler = async () => {
+        setIsSubmitting(true)
+        await deleteExpense(expenseId)
         expensesCtx.deleteExpenses(expenseId)
         navigation.goBack()
 
     }
-    const confirmHandler = (data: Expense) => {
-        isEditing? expensesCtx.updateExpenses(expenseId, data): expensesCtx.addExpense(data)
+    const confirmHandler = async (data: Expense) => {
+        setIsSubmitting(true)
+        if (isEditing){
+            expensesCtx.updateExpenses(expenseId, data)
+            await updateExpense(expenseId, data)
+        } else {
+            const id = await storeExpense(data)
+            expensesCtx.addExpense({id: id, ...data})
+        }
+
         navigation.goBack()
     }
+
+    if (isSubmitting){
+        return <LoadingOverlay/>
+    }
+
     return (
 
         <View style={styles.container}>

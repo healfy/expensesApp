@@ -15,7 +15,7 @@ export interface IExpensesProvider {
 }
 
 export interface AddPayload {
-    data: Expense
+    data: ExpensesDetail
 }
 
 export interface DeletePayload {
@@ -42,7 +42,12 @@ export type AddAction = {
     type: "ADD"
 }
 
-export type Action = AddAction | DeleteAction | UpdateAction
+export type SetAction = {
+    type: "SET"
+    payload: Array<ExpensesDetail>
+}
+
+export type Action = AddAction | DeleteAction | UpdateAction | SetAction
 
 export interface ExpensesReducer {
     state: Array<ExpensesDetail>,
